@@ -12,10 +12,14 @@ class data:
     train_inputs = np.array(train_df.ix[:,1:].apply(lambda x:x/max(x), axis=1))
     #train_inputs = np.array(train_df.ix[:,1:])
     temp = np.array(train_df['label'])
+    train_labels = temp
     classifier_labels = np.zeros([np.size(temp), 10])
     for i in range(np.size(temp)):
         classifier_labels[i][temp[i]] = 1
     del temp
+
+    test_df = pd.read_csv('test.csv', sep=',', header=0)
+    test_inputs = np.array(test_df)
 
 class visualize:
     def __init__(self):
@@ -188,11 +192,29 @@ class nn:
             gradient = self.classifier_gradient(mini_batch_inputs, mini_batch_labels)
             momentum_speed = self.momentum * momentum_speed + gradient
             self.classifier_model = self.classifier_model + self.lr_classification * momentum_speed
-        
+
+    def predict(self, inputs):
+        #shape of inputs = <#training cases> x <#inputs>
+        #shape of model = <#inputs> x <#hidden units>
+        #shape of classifer model = <#hidden units> x <#classes>
+
+        hidden_layer = self.sigmoid(np.matmul(inputs, self.model))
+        class_input = np.matmul(hidden_layer, self.classifier_model)
+        prediction_probs = self.softmax(class_input)
+        predictions = np.argmax(prediction_probs, 1)
+        return predictions
+   
     def classify(self):
         #learn the hidden layer representation
         data.classifier_inputs = self.sigmoid(np.matmul(data.train_inputs, self.model))
         self.learn_classification_model()
+        result = self.predict(data.train_inputs)
+        
+        num_results = 10
+        for i,label in enumerate(data.train_labels):
+            if i >= num_results:
+                break
+            print label, result[i]
 
     def test_method(self):
         #test sampler
